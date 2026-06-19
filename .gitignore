@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Local HTML output (built by GitHub Actions, not committed)
+dist/
+*.html
+
+# macOS
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
+
+# Marp CLI cache
+.marp-cache/

@@ -1,0 +1,59 @@
+name: Build and Deploy Marp Slides
+
+on:
+  push:
+    branches:
+      - main
+
+# Allow GitHub Actions to deploy to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Convert all slides/*.md to HTML using the official Marp Action
+      - name: Build slides with Marp
+        uses: marp-team/marp-action@v2
+        with:
+          # Source directory for Markdown files
+          source: slides/
+          # Output directory (will be deployed to gh-pages)
+          output: dist/
+          # Engine options (html enabled for custom HTML in slides)
+          engine: "@marp-team/marp-core"
+
+      # 3. Copy a simple index page listing all generated HTML files
+      - name: Create index page
+        run: |
+          echo "<!DOCTYPE html>" > dist/index.html
+          echo "<html lang='en'><head><meta charset='UTF-8'>" >> dist/index.html
+          echo "<title>Stefan's Marp Slides</title>" >> dist/index.html
+          echo "<style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;}</style>" >> dist/index.html
+          echo "</head><body><h1>📊 Presentation Slides</h1><ul>" >> dist/index.html
+          for f in dist/*.html; do
+            name=$(basename "$f" .html)
+            if [ "$name" != "index" ]; then
+              echo "<li><a href='${name}.html'>${name//-/ }</a></li>" >> dist/index.html
+            fi
+          done
+          echo "</ul><p><em>Built automatically with <a href='https://marp.app'>Marp</a> via GitHub Actions.</em></p>" >> dist/index.html
+          echo "</body></html>" >> dist/index.html
+
+      # 4. Deploy the dist/ folder to the gh-pages branch
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist/
+          publish_branch: gh-pages
+          # Keep git history clean on gh-pages
+          force_orphan: true
